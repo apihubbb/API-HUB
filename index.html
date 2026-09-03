@@ -1265,7 +1265,8 @@ function renderGuide() {
       <div><span class="guide-hero__eyebrow">${state.os === 'mac' ? 'macOS' : state.os} · ${String(index).padStart(2, '0')} / ${String(items.length).padStart(2, '0')}</span><h2>${meta.title}</h2><p>${t('client_intro')}</p></div>
       <button class="guide-hero__change" type="button" data-focus-clients>${t('choose_another_client')} <span>↓</span></button>
     </header>
-    ${auto ? `<section class="launch-card"><div class="launch-card__copy"><span>01 / ${t('auto_install')}</span><h3>${t('one_command')}</h3><p>${t(state.os === 'windows' ? 'auto_note_windows' : 'auto_note')}</p></div><div class="launch-card__command">${codeWindow(auto, state.os === 'windows' ? 'PowerShell' : 'Terminal')}</div></section>` : ''}`;
+    ${auto ? `<section class="launch-card"><div class="launch-card__copy"><span>01 / ${t('auto_install')}</span><h3>${t('one_command')}</h3><p>${t(state.os === 'windows' ? 'auto_note_windows' : 'auto_note')}</p></div><div class="launch-card__command">${codeWindow(auto, state.os === 'windows' ? 'PowerShell' : 'Terminal')}</div></section>` : ''}
+    ${item.id !== 'kimi-code-cli' ? `<section class="setup-route"><header class="setup-route__head"><div><span>${auto ? '02' : '01'} / ${t('full_guide')}</span><h3>${t('setup_route')}</h3></div><p>${blocks.length} ${t('steps')}</p></header><div class="manual-guide">${guideSteps}</div></section>` : ''}`;
 
   bindCopyButtons();
   $('[data-focus-clients]')?.addEventListener('click', () => $('.client-sidebar')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
