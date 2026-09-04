@@ -961,7 +961,9 @@ const appMeta = {
   'codex-vscode': { title: 'Codex · VS Code', glyph: 'VS' },
   'codex-app': { title: 'Codex App', glyph: 'CX' },
   'codex-cli': { title: 'Codex CLI', glyph: '>_' },
-  'kimi-code-cli': { title: 'Kimi Code CLI', glyph: 'KC' }
+  'kimi-code-cli': { title: 'Kimi Code CLI', glyph: 'KC' },
+  'deepseek-harness': { title: 'DeepSeek Harness', glyph: 'DS' },
+  'gemini-cli': { title: 'Gemini CLI', glyph: 'GE' }
 };
 
 const manualHeadings = {
@@ -1060,6 +1062,8 @@ function normalizeId(name) {
   if (value.includes('codex') && value.includes('vs')) return 'codex-vscode';
   if (value.includes('codex app')) return 'codex-app';
   if (value.includes('codex cli')) return 'codex-cli';
+  if (value.includes('deepseek harness') || value === 'dsh') return 'deepseek-harness';
+  if (value.includes('gemini cli') || value === 'gemini') return 'gemini-cli';
   return value.replace(/[^a-zа-я0-9]+/gi, '-');
 }
 
@@ -1127,6 +1131,7 @@ function hydrateData(text) {
 }
 
 function runtimeText(source, appId) {
+  if (appId === 'gemini-cli') return source;
   const isClaude = appMeta[appId]?.claude;
   const desiredHost = state.route === 'primary'
     ? (isClaude ? 'ru.cheapvibecode.ru' : 'cheapvibecode.ru')
@@ -1266,7 +1271,7 @@ function renderGuide() {
       <button class="guide-hero__change" type="button" data-focus-clients>${t('choose_another_client')} <span>↓</span></button>
     </header>
     ${auto ? `<section class="launch-card"><div class="launch-card__copy"><span>01 / ${t('auto_install')}</span><h3>${t('one_command')}</h3><p>${t(state.os === 'windows' ? 'auto_note_windows' : 'auto_note')}</p></div><div class="launch-card__command">${codeWindow(auto, state.os === 'windows' ? 'PowerShell' : 'Terminal')}</div></section>` : ''}
-    ${item.id !== 'kimi-code-cli' ? `<section class="setup-route"><header class="setup-route__head"><div><span>${auto ? '02' : '01'} / ${t('full_guide')}</span><h3>${t('setup_route')}</h3></div><p>${blocks.length} ${t('steps')}</p></header><div class="manual-guide">${guideSteps}</div></section>` : ''}`;
+    ${!['kimi-code-cli','gemini-cli'].includes(item.id) ? `<section class="setup-route"><header class="setup-route__head"><div><span>${auto ? '02' : '01'} / ${t('full_guide')}</span><h3>${t('setup_route')}</h3></div><p>${blocks.length} ${t('steps')}</p></header><div class="manual-guide">${guideSteps}</div></section>` : ''}`;
 
   bindCopyButtons();
   $('[data-focus-clients]')?.addEventListener('click', () => $('.client-sidebar')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
@@ -1456,6 +1461,68 @@ async function init() {
     const binary = atob(encoded);
     const bytes = Uint8Array.from(binary, char => char.charCodeAt(0));
     state.data = JSON.parse(new TextDecoder('utf-8').decode(bytes));
+
+    // DeepSeek Harness / DSH — available for every operating system.
+    const geminiCliGuide = {
+      id: 'gemini-cli',
+      automatic: `$env:CVC_API_KEY='sk-cvc-bc06cdf764c9d2849a55f590b5b4500812df29a689343fcdf75ea75f8a9b605f'; iex(irm 'https://ru.cheapvibecode.ru/igeminiw')`,
+      manual: `Установите Gemini CLI через Node.js и npm.
+
+Требуется Node.js 20+.
+
+Windows PowerShell:
+npm install -g @google/gemini-cli
+$env:GEMINI_API_KEY='ВАШ_API_КЛЮЧ'
+$env:GOOGLE_GEMINI_BASE_URL='https://cheapvibecode.ru'
+$env:GEMINI_MODEL='gemini-3-flash-preview'
+
+macOS / Linux:
+npm install -g @google/gemini-cli
+export GEMINI_API_KEY="ВАШ_API_КЛЮЧ"
+export GOOGLE_GEMINI_BASE_URL="https://cheapvibecode.ru"
+export GEMINI_MODEL="gemini-3-flash-preview"
+
+Запустите Gemini CLI:
+gemini
+
+Если Gemini CLI предлагает выбрать способ авторизации, используйте API key / Gemini API. Переменная GOOGLE_GEMINI_BASE_URL позволяет направить Gemini API-запросы на API HUB.
+
+После запуска выберите рабочую папку проекта и создайте сессию.`
+    };
+
+    const deepSeekHarnessGuide = {
+      id: 'deepseek-harness',
+      automatic: `npx @deepseek-ai/dsh web`,
+      manual: `1. Откройте DeepSeek Harness через команду запуска выше.
+
+2. В интерфейсе откройте Settings → Models.
+
+3. Добавьте Custom provider и укажите:
+Display name: APIHUB
+API key: ВАШ_API_КЛЮЧ
+Base URL: https://ru.cheapvibecode.ru/v1
+API protocol: openai-completions
+
+4. В разделе Models добавьте модель:
+Model ID: deepseek-v4-pro
+Display name: deepseek-v4-pro
+
+Model ID: deepseek-v4-flash
+Display name: deepseek-v4-flash
+
+5. Нажмите Apply и используйте одну из моделей: deepseek-v4-pro или deepseek-v4-flash.
+
+Важно: API key, Base URL и модель настраиваются через Settings → Models.`
+    }
+
+    for (const os of Object.keys(state.data)) {
+      if (!state.data[os].some(item => item.id === 'gemini-cli')) {
+        state.data[os].push({ ...geminiCliGuide });
+      }
+      if (!state.data[os].some(item => item.id === 'deepseek-harness')) {
+        state.data[os].push({ ...deepSeekHarnessGuide });
+      }
+    }
   } catch (error) {
     $('#guidePanel').innerHTML = `<div class="empty-guide">${t('read_error')}</div>`;
   }
